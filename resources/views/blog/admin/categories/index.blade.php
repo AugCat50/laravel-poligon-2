@@ -28,7 +28,10 @@
                                             </a>
                                         </td>
                                         <td @if(in_array($item->parent_id, [0, 1])) style="color:#ccc" @endif>
-                                            {{ $item->parent_id }}{{-- $item->parentCategory->title --}}
+                                            <!-- 45 -->
+                                            <!-- Акссесор, получить title родительской категории, проверить является ли текущая корневой, вывести ишибку при 
+                                            отсутствии родителя или корня -->
+                                            {{ $item->parentTitle }}
                                         </td>
                                     </tr>
                                 @endforeach

@@ -21,6 +21,15 @@ Auth::routes();
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
+$groupData = [
+    'namespace' => 'App\Http\Controllers',
+    'prefix'    => 'digging_deeper',
+];
+Route::group($groupData, function () {
+    Route::get('collections', 'DiggingDeeperController@collections')->name('diggng_deeper.collections');
+});
+
+
 // Route::resource('rest', 'App\Http\Controllers\RestTestController')->names('restTest');
 
 Route::group(['namespace' => 'App\Http\Controllers\Blog', 'prefix' => 'blog'], function() {
@@ -38,4 +47,9 @@ Route::group($groupData, function () {
     Route::resource('categories', 'CategoryController')
         ->only($methods)
         ->names('blog.admin.categories');
+
+    //BlogPost
+    Route::resource('posts', 'PostController')
+        ->except(['show'])
+        ->names('blog.admin.posts');
 });

@@ -2,18 +2,32 @@
 
 namespace App\Http\Controllers\Blog\Admin;
 
-use Illuminate\Support\Str;
 use App\Models\BlogCategory;
 use Illuminate\Http\Request;
 
-use App\Http\Controllers\Controller;
 use App\Repositories\BlogCategoryRepository;
 use App\Http\Requests\BlogCategoryCreateRequest;
 use App\Http\Requests\BlogCategoryUpdateRequest;
 
 
+/**
+ * Управление категорями блога
+ * 
+ * @package App\Http\Controllers\Blog\Admin
+ */
 class CategoryController extends BaseController
 {
+    /** 
+     * @var BlogCategoryRepository
+     */
+    private $blogCategoryRepository;
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->blogCategoryRepository = BlogCategoryRepository::getInstance();
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -21,7 +35,8 @@ class CategoryController extends BaseController
      */
     public function index()
     {
-        $paginator = BlogCategory::paginate(5);
+        // $paginator = BlogCategory::paginate(5);
+        $paginator = $this->blogCategoryRepository->getAllWithPaginate(25);
 
         return view('blog.admin.categories.index', compact('paginator'));
     }
@@ -34,7 +49,7 @@ class CategoryController extends BaseController
     public function create()
     {
         $item         = new BlogCategory();
-        $categoryList = BlogCategory::all();
+        $categoryList = $this->blogCategoryRepository->getForComboBox();
 
         return view('blog.admin.categories.edit', compact('item', 'categoryList'));
     }
@@ -42,18 +57,12 @@ class CategoryController extends BaseController
     /**
      * Store a newly created resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  BlogCategoryUpdateRequest  $request
      * @return \Illuminate\Http\Response
      */
     public function store(BlogCategoryCreateRequest $request)
     {
         $data = $request->input();
-        if (empty($data['slug'])) {
-            $data['slug'] = $slug = Str::slug($data['title']);
-        }
-
-        // $item = new BlogCategory($data);
-        // $item->save();
 
         //Создать объект и сохранить в БД
         $item = (new BlogCategory())->create($data);
@@ -73,15 +82,27 @@ class CategoryController extends BaseController
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit($id, BlogCategoryRepository $categoryRepository)
+    public function edit($id)
     {
-        //При fail выдаёт 404, поэтому использовать с остророжностью
-        // $item         = BlogCategory::findOrFail($id);
-        // $categoryList = BlogCategory::all();
+        $categoryRepository = $this->blogCategoryRepository;
+        $item               = $categoryRepository->getEdit($id);
 
-        $item         = $categoryRepository->getEdit($id);
+        // $v['title_before'] = $item->title;
+        // $item->title       = 'Asdsadsad dsfdsf 12313';
+
+        // $v['title_after']            = $item->title;
+        // $v['getAttribute']           = $item->getAttribute('title');
+        // $v['attributesToArray']      = $item->attributesToArray();
+        // // $v['attributes']             = $item->attributes['title'];
+        // $v['getAttributeValue']      = $item->getAttributeValue('title');
+        // $v['getMutatedAttributes']   = $item->getMutatedAttributes();
+        // $v['hasGetMuator for title'] = $item->hasGetMutator('title');
+        // $v['toArray']                = $item->toArray();
+
+        // dd($v, $item);
+
+        if (empty($item)) abort(404);
         $categoryList = $categoryRepository->getForComboBox();
-        $number = 23; 
 
         return view('blog.admin.categories.edit', compact('item', 'categoryList'));
     }
@@ -89,24 +110,15 @@ class CategoryController extends BaseController
     /**
      * Update the specified resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  BlogCategoryUpdateRequest  $request
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
     public function update(BlogCategoryUpdateRequest $request, $id)
     {
-        // $rules = [
-        //     'title'       => 'required|min:5|max:200',
-        //     'slug'        => 'max:200',
-        //     'description' => 'string|min:3|max:500',
-        //     'parent_id'   => 'required|integer|exists:blog_categories,id'
-        // ];
+        // $item = BlogCategory::find($id);
+        $item = $this->blogCategoryRepository->getEdit($id);
 
-        // $validatedData = $this->validate($request, $rules);
-
-        // dd($validatedData);
-
-        $item = BlogCategory::find($id);
         if (empty($item)) {
             return back()
                 ->withErrors(['msg' => 'Запись id='.$id.' не найдена'])
@@ -115,11 +127,6 @@ class CategoryController extends BaseController
 
         $data   = $request->all();
 
-        if (empty($data['slug'])) {
-            $data['slug'] = $slug = Str::slug($data['title']);
-        }
-
-        // $result = $item->fill($data)->save();
         $result = $item->update($data);
 
         if ($result) {
